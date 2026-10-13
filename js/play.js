@@ -540,7 +540,7 @@ class PlayScene {
     c.save(); c.translate(G.W / 2, G.H / 2); c.scale(k, k); c.translate(-G.W / 2, -G.H / 2);
     woodPanel(c, x, y, w, h, 34, 21);
     c.fillStyle = 'rgba(255,248,225,0.95)'; rr(c, x + 22, y + 22, w - 44, h - 44, 24); c.fill();
-    txt(c, 'Уровень пройден!', G.W / 2, y + 74, { size: 54, fill: '#ffd43b', stroke: '#8a4300', sw: 12, shadow: 'rgba(120,60,0,0.35)', sy: 5 });
+    drawLogo(c, 'Уровень пройден!', G.W / 2, y + 74, 54, G.rt, 0, false);
     // показываем только заработанные звёзды — никаких «пустых»
     const ns = this.stars || 3;
     for (let i = 0; i < ns; i++) {

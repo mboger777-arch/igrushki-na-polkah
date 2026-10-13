@@ -3,37 +3,51 @@
 // объёмная надпись: каждая буква (толща, тень, обводки, градиент, блик) рисуется ОДИН раз в свой холст,
 // дальше кадр только ставит готовые буквы (иначе ~150 strokeText за кадр — тормозит на телефоне)
 const LOGO_CACHE = new Map();
-function logoGlyph(ch, size, k) {
-  // чистая буква: мягкая тень, тонкая тёмная обводка, светлый градиент. Кэшируем, только когда Pangolin уже загружен.
-  const ok = !document.fonts || document.fonts.check(font(size, 400));
-  const key = ch + '|' + size + '|' + k; let g = ok && LOGO_CACHE.get(key); if (g) return g;
-  const pad = Math.ceil(size * 0.3);
-  const m = document.createElement('canvas').getContext('2d'); m.font = font(size, 400); const w = m.measureText(ch).width;
+const LOGO_COLS = [['#ffe3e3', '#ff6b6b', '#c92a2a'], ['#fff3bf', '#ffd43b', '#f08c00'], ['#d3f9d8', '#51cf66', '#2b8a3e'], ['#d0ebff', '#4dabf7', '#1864ab'], ['#f3d9fa', '#cc5de8', '#862e9c'], ['#ffe8cc', '#ff922b', '#d9480f']];
+const LFONT = size => `900 ${size}px "NunitoLogo", ${FONT}`;
+function logoGlyph(ch, size, k, idx = 0) {
+  // праздничная буква: своя «игрушечная» краска (радужный набор), белая и тёмная обводки, тень, блик
+  const ok = !document.fonts || document.fonts.check(LFONT(size));
+  const key = ch + '|' + size + '|' + k + '|' + idx; let g = ok && LOGO_CACHE.get(key); if (g) return g;
+  const pad = Math.ceil(size * 0.34);
+  const m = document.createElement('canvas').getContext('2d'); m.font = LFONT(size); const w = m.measureText(ch).width;
   const W = Math.ceil(w + pad * 2), H = Math.ceil(size * 1.3 + pad * 2);
   const cv = document.createElement('canvas'); cv.width = Math.ceil(W * k); cv.height = Math.ceil(H * k);
   const c = cv.getContext('2d'); c.scale(k, k); const ox = pad + w / 2, oy = pad + size * 0.65;
-  c.font = font(size, 400); c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round'; c.translate(ox, oy);
-  c.save(); c.shadowColor = 'rgba(40,15,0,0.55)'; c.shadowBlur = size * 0.12; c.shadowOffsetY = size * 0.06;
-  c.lineWidth = size * 0.1; c.strokeStyle = '#6b2f00'; c.strokeText(ch, 0, 0); c.restore();
-  const gr = c.createLinearGradient(0, -size * 0.45, 0, size * 0.45); gr.addColorStop(0, '#fff8c4'); gr.addColorStop(0.5, '#ffd43b'); gr.addColorStop(1, '#ffa41b');
+  c.font = LFONT(size); c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round'; c.translate(ox, oy);
+  const [c0, c1, c2] = LOGO_COLS[idx % LOGO_COLS.length];
+  c.save(); c.shadowColor = 'rgba(60,20,70,0.55)'; c.shadowBlur = size * 0.1; c.shadowOffsetY = size * 0.09;
+  c.lineWidth = size * 0.26; c.strokeStyle = '#4a1d5c'; c.strokeText(ch, 0, 0); c.restore();
+  c.lineWidth = size * 0.13; c.strokeStyle = '#ffffff'; c.strokeText(ch, 0, 0);
+  const gr = c.createLinearGradient(0, -size * 0.42, 0, size * 0.42); gr.addColorStop(0, c0); gr.addColorStop(0.45, c1); gr.addColorStop(1, c2);
   c.fillStyle = gr; c.fillText(ch, 0, 0);
+  // глянцевый блик сверху буквы
+  c.save(); c.globalCompositeOperation = 'source-atop'; const hl = c.createLinearGradient(0, -size * 0.45, 0, -size * 0.05); hl.addColorStop(0, 'rgba(255,255,255,0.75)'); hl.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = hl; c.fillRect(-w, -size, w * 2, size * 0.95); c.restore();
   g = { cv, ox, oy, W, H }; if (ok) LOGO_CACHE.set(key, g); return g;
 }
-function drawLogo(c, text, cx, cy, size, t = 0, arc = 0.0) {
+function logoToy(c, kind, x, y, s, t) {
+  c.save(); c.translate(x, y + Math.sin(t * 3 + x) * s * 0.08); c.rotate(Math.sin(t * 2 + x) * 0.15);
+  glow(c, 0, -s * 0.5, s * 0.9, 'rgba(255,240,170,0.7)', 0.7); drawItem(c, kind, 0, 0, s); c.restore();
+}
+function drawLogo(c, text, cx, cy, size, t = 0, arc = 0.0, toys = true) {
   size = Math.round(size);
   const k = Math.min(4, Math.max(1, Math.round((c.getTransform ? Math.abs(c.getTransform().a) : 1) * 4) / 4));
-  c.save(); c.font = font(size, 400);
+  c.save(); c.font = LFONT(size);
   const chars = [...text], widths = chars.map(ch => c.measureText(ch).width);
-  const total = widths.reduce((a, b) => a + b, 0) * 1.08;
-  { const pw = total + size * 0.7, ph = size * 1.25; c.fillStyle = 'rgba(255,248,225,0.55)'; rr(c, cx - pw / 2, cy - ph / 2 + arc * size * 0.12, pw, ph, ph / 2); c.fill(); }
-  let xx = cx - total / 2;
+  const total = widths.reduce((a, b) => a + b, 0) * 1.04;
+  // мягкое сияние за надписью
+  glow(c, cx, cy, total * 0.55, 'rgba(255,236,160,0.35)', 0.6 + Math.sin(t * 2) * 0.1);
+  if (toys) { const s2 = size * 0.62; logoToy(c, 'tball', cx - total / 2 - s2 * 0.75, cy + s2 * 0.45, s2, t); logoToy(c, 'teddy', cx + total / 2 + s2 * 0.8, cy + s2 * 0.5, s2 * 1.1, t + 1); logoToy(c, 'tcube', cx + total / 2 + s2 * 0.15, cy - size * 0.55, s2 * 0.6, t + 2); }
+  let xx = cx - total / 2, li = 0;
   chars.forEach((ch, i) => {
-    const w = widths[i] * 1.08, px = xx + w / 2, rel = (px - cx) / total;
-    const py = cy + rel * rel * arc * size + Math.sin(t * 3 + i * 0.5) * size * 0.04, rot = rel * arc * 0.9;
+    const w = widths[i] * 1.04, px = xx + w / 2, rel = (px - cx) / total;
+    const b = Math.max(0, Math.sin(t * 3.2 - i * 0.45)), py = cy + rel * rel * arc * size - b * size * 0.09, rot = rel * arc * 0.9 + Math.sin(t * 2 + i) * 0.03;
     xx += w; if (ch === ' ') return;
-    const g = logoGlyph(ch, size, k);
-    c.save(); c.translate(px, py); c.rotate(rot); c.drawImage(g.cv, -g.ox, -g.oy, g.W, g.H); c.restore();
+    const g = logoGlyph(ch, size, k, li++), sq = 1 + b * 0.05;
+    c.save(); c.translate(px, py); c.rotate(rot); c.scale(1 / sq, sq); c.drawImage(g.cv, -g.ox, -g.oy, g.W, g.H); c.restore();
   });
+  // искорки
+  for (let q = 0; q < 4; q++) { const a = t * 1.3 + q * 1.7, sx = cx + Math.cos(a) * total * 0.48, sy = cy + Math.sin(a * 1.6) * size * 0.55; glow(c, sx, sy, size * 0.18, 'rgba(255,255,255,0.95)', 0.5 + 0.5 * Math.sin(t * 6 + q)); }
   c.restore();
 }
 class TitleScene {
@@ -69,7 +83,7 @@ class TitleScene {
       c.drawImage(IMG.logo, lx, ly, lw, lh);
     } else {
       glow(c, G.W / 2, 150, 520, 'rgba(255,220,120,0.45)', 0.6 + Math.sin(this.t * 2) * 0.1);
-      drawLogo(c, 'Игрушки на полках', G.W / 2, 150, Math.min(112, G.W / 12), this.t, 0.5);
+      drawLogo(c, 'Игрушки на полках', G.W / 2, 150, Math.min(92, G.W / 15), this.t, 0.5);
     }
     const bw = 330, bh = 104, bx = G.W * 0.575 - bw / 2, by = G.H - 150;
     goldButton(c, bx, by, bw, bh, 'Играть', 60, Math.sin(this.t * 4) * 0.035);
@@ -244,7 +258,7 @@ class MapScene {
     } else { const q0 = this.alongPath(ix[curI] - 1, ix[curI], 0.55); pos = { x: q0.x, y: q0.y - Math.abs(Math.sin(this.t * 3)) * 8 }; }
     drawSprite(c, IMG.iskra_idle, pos.x, pos.y + 6, 124, dir < 0);
     drawParticles(c, 'world');
-    txt(c, 'Дорожка по магазину', G.W / 2, 64, { size: 56, fill: '#fff8e6', stroke: '#8a4300', sw: 12, shadow: 'rgba(80,40,0,0.35)', sy: 5 });
+    drawLogo(c, 'Дорожка по магазину', G.W / 2, 60, 48, G.rt, 0, false);
     roundIconButton(c, 18 + G.sl, 18, 66, 'home'); addButton(18 + G.sl, 18, 66, 66, () => goScene(() => new TitleScene()), 'home');
     if (typeof PROLOGUE !== 'undefined') { goldButton(c, 100 + G.sl, 18, 200, 66, 'Сказка', 32, 0, 'green'); addButton(100 + G.sl, 18, 200, 66, () => goScene(() => new PlayScene(PROLOGUE)), 'story'); }
     roundIconButton(c, G.W - 84 - G.sr, 18, 66, G.muted ? 'mute' : 'sound'); addButton(G.W - 84 - G.sr, 18, 66, 66, () => Sound.toggle(), 'sound');
@@ -532,7 +546,7 @@ function loadOptionalLogo() {
 }
 (async function boot() {
   try {
-    await Promise.all([loadImages(), loadOptionalLogo(), document.fonts ? Promise.all([document.fonts.load(font(40, 400)), document.fonts.load(font(40, 900)), document.fonts.load('400 40px "Pangolin"', 'Десять 0123456789')]).then(() => document.fonts.ready) : Promise.resolve()]);
+    await Promise.all([loadImages(), loadOptionalLogo(), document.fonts ? Promise.all([document.fonts.load(font(40, 400)), document.fonts.load(font(40, 900)), document.fonts.load('400 40px "Pangolin"', 'Десять 0123456789'), document.fonts.load('900 40px "NunitoLogo"', 'Игрушки на полках!')]).then(() => document.fonts.ready) : Promise.resolve()]);
     if (document.fonts && !document.fonts.check('40px "Pangolin"')) console.error('шрифт Pangolin не загрузился');
   } catch (e) { console.error(e); }
   G.scene = URLP.get('level') === 'p' ? new PlayScene(PROLOGUE) : URLP.has('level') ? new PlayScene(clamp(+URLP.get('level') - 1, 0, LEVELS.length - 1)) : new TitleScene();
