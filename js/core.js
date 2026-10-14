@@ -114,7 +114,7 @@ const FullScreen = {
 
 // ---------- Картинки ----------
 const IMG = {};
-const IMG_LIST = ['bgm_garden', 'bgm_island', 'bgm_eve', 'bgm_sky', 'bgm_day', 'bgm_bonus', 'bg_garden.jpg', 'bg_sky.jpg', 'bg_bonus.jpg', 'malina', 'zhuzha', 'bg_island.jpg', 'bg_island_soft.jpg', 'bg_day.jpg', 'bg_eve.jpg', 'bg_day_soft.jpg', 'bg_day_soft_b.jpg', 'bg_eve_soft.jpg', 'arch_idle', 'arch_point', 'arch_worried', 'arch_cheer', 'bublik', 'ponchik', 'iskra_fall', 'iskra_hero', 'iskra_idle', 'iskra_jump', 'iskra_runA', 'iskra_runB', 'iskra_runC',
+const IMG_LIST = ['bg_title.jpg', 'bgm_garden', 'bgm_island', 'bgm_eve', 'bgm_sky', 'bgm_day', 'bgm_bonus', 'bg_garden.jpg', 'bg_sky.jpg', 'bg_bonus.jpg', 'malina', 'zhuzha', 'bg_island.jpg', 'bg_island_soft.jpg', 'bg_day.jpg', 'bg_eve.jpg', 'bg_day_soft.jpg', 'bg_day_soft_b.jpg', 'bg_eve_soft.jpg', 'arch_idle', 'arch_point', 'arch_worried', 'arch_cheer', 'bublik', 'ponchik', 'iskra_fall', 'iskra_hero', 'iskra_idle', 'iskra_jump', 'iskra_runA', 'iskra_runB', 'iskra_runC',
   'shchelk_carry', 'shchelk_down', 'shchelk_front', 'shchelk_laugh', 'shchelk_up', 't_basket', 't_bun', 't_bush', 't_crate', 't_fence', 't_flag', 't_grass',
   't_lamp_off', 't_lamp_on', 't_plank', 't_star', 't_stone', 'tex_dirt', 'tex_grass', 'tex_stone'];
 function loadImages() {

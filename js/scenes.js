@@ -55,9 +55,9 @@ class TitleScene {
   update(dt) { this.t += dt; updateParticles(dt); if (fx() < dt * 3) sparkBurst(frand(0, G.W), frand(0, G.H * 0.6), 1, '#fff6b0', 40); }
   draw(c) {
     G.ui = [];
-    const im = IMG.bg_garden, s = Math.max(G.W / im.width, G.H / im.height) * 1.06;
+    const im = IMG.bg_title, s = Math.max(G.W / im.width, G.H / im.height) * (1.08 + Math.sin(this.t * 0.15) * 0.02);
     c.drawImage(im, (G.W - im.width * s) / 2 + Math.sin(this.t * 0.2) * 14, (G.H - im.height * s) / 2, im.width * s, im.height * s);
-    c.fillStyle = 'rgba(255,240,200,0.12)'; c.fillRect(0, 0, G.W, G.H);
+    titleFX(c, this.t);
     for (let i = 0; i < 3; i++) cloud(c, ((i * 500 + this.t * 14) % (G.W + 400)) - 200, 70 + i * 40, 0.8, 0.9);
     // логотип сверху по центру, герои по краям внизу — ничьё лицо не перекрыто
     const lr = IMG.logo ? IMG.logo.width / IMG.logo.height : 1.03, lh = Math.min(G.H * 0.62, G.W * 0.42 / lr), lw = lh * lr;
@@ -86,10 +86,10 @@ class TitleScene {
       drawLogo(c, 'Игрушки на полках', G.W / 2, 150, Math.min(92, G.W / 15), this.t, 0.5);
     }
     const bw = 330, bh = 104, bx = G.W * 0.575 - bw / 2, by = G.H - 150;
-    goldButton(c, bx, by, bw, bh, 'Играть', 60, Math.sin(this.t * 4) * 0.035);
+    if (!/cover/.test(location.search)) goldButton(c, bx, by, bw, bh, 'Играть', 60, Math.sin(this.t * 4) * 0.035);
     addButton(bx, by, bw, bh, () => this.onEnter(), 'play');
     drawParticles(c, 'world');
-    roundIconButton(c, G.W - 84 - G.sr, 18, 66, G.muted ? 'mute' : 'sound'); addButton(G.W - 84 - G.sr, 18, 66, 66, () => Sound.toggle(), 'sound');
+    if (!/cover/.test(location.search)) roundIconButton(c, G.W - 84 - G.sr, 18, 66, G.muted ? 'mute' : 'sound'); addButton(G.W - 84 - G.sr, 18, 66, 66, () => Sound.toggle(), 'sound');
   }
   onEnter() { goScene(() => (typeof PROLOGUE !== 'undefined' && !prologueSeen()) ? new PlayScene(PROLOGUE) : new MapScene()); }
 }
@@ -261,7 +261,7 @@ class MapScene {
     drawLogo(c, 'Дорожка по магазину', G.W / 2, 60, 48, G.rt, 0, false);
     roundIconButton(c, 18 + G.sl, 18, 66, 'home'); addButton(18 + G.sl, 18, 66, 66, () => goScene(() => new TitleScene()), 'home');
     if (typeof PROLOGUE !== 'undefined') { goldButton(c, 100 + G.sl, 18, 200, 66, 'Сказка', 32, 0, 'green'); addButton(100 + G.sl, 18, 200, 66, () => goScene(() => new PlayScene(PROLOGUE)), 'story'); }
-    roundIconButton(c, G.W - 84 - G.sr, 18, 66, G.muted ? 'mute' : 'sound'); addButton(G.W - 84 - G.sr, 18, 66, 66, () => Sound.toggle(), 'sound');
+    if (!/cover/.test(location.search)) roundIconButton(c, G.W - 84 - G.sr, 18, 66, G.muted ? 'mute' : 'sound'); addButton(G.W - 84 - G.sr, 18, 66, 66, () => Sound.toggle(), 'sound');
   }
   onEnter() { goScene(() => new PlayScene(Math.min(LEVELS.length - 1, this.prog - 1))); }
 }
@@ -553,3 +553,25 @@ function loadOptionalLogo() {
   window.__game.ready = true;
   requestAnimationFrame(frame);
 })();
+// ===== Заставка: лучи света, пылинки-светлячки, виньетка (мягкая анимация) =====
+const _MOTES = Array.from({ length: 46 }, (_, i) => ({ x: (i * 0.618) % 1, y: (i * 0.371) % 1, s: 1.5 + (i % 5) * 0.9, v: 0.012 + (i % 7) * 0.004, ph: i * 1.7 }));
+function titleFX(c, t) {
+  const W = G.W, H = G.H;
+  c.save(); c.globalCompositeOperation = 'lighter';
+  for (let k = 0; k < 5; k++) {
+    const a = -0.5 + k * 0.17 + Math.sin(t * 0.3 + k) * 0.03, al = 0.05 + 0.03 * Math.sin(t * 0.7 + k * 2);
+    c.save(); c.translate(W * 0.78, -H * 0.15); c.rotate(a + Math.PI / 2);
+    const g = c.createLinearGradient(0, 0, H * 1.5, 0); g.addColorStop(0, `rgba(255,236,170,${al * 2})`); g.addColorStop(1, 'rgba(255,236,170,0)');
+    c.fillStyle = g; c.beginPath(); c.moveTo(0, 0); c.lineTo(H * 1.5, -60 - k * 14); c.lineTo(H * 1.5, 60 + k * 14); c.closePath(); c.fill(); c.restore();
+  }
+  for (const m of _MOTES) {
+    const y = ((m.y - t * m.v) % 1 + 1) % 1, x = m.x + Math.sin(t * 0.6 + m.ph) * 0.015, tw = 0.5 + 0.5 * Math.sin(t * 2.3 + m.ph);
+    const px = x * W, py = y * H, r = m.s * (1.6 + tw);
+    const g = c.createRadialGradient(px, py, 0, px, py, r * 4); g.addColorStop(0, `rgba(255,245,200,${0.55 * tw + 0.2})`); g.addColorStop(1, 'rgba(255,220,140,0)');
+    c.fillStyle = g; c.beginPath(); c.arc(px, py, r * 4, 0, 7); c.fill();
+  }
+  c.restore();
+  c.fillStyle = 'rgba(255,225,170,0.08)'; c.fillRect(0, 0, W, H);
+  const v = c.createRadialGradient(W / 2, H * 0.45, Math.min(W, H) * 0.45, W / 2, H * 0.5, Math.max(W, H) * 0.8);
+  v.addColorStop(0, 'rgba(40,20,10,0)'); v.addColorStop(1, 'rgba(40,20,10,0.38)'); c.fillStyle = v; c.fillRect(0, 0, W, H);
+}
