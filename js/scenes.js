@@ -66,15 +66,15 @@ class TitleScene {
     // мягкие контактные тени
     const shadow = (x, w) => { const g = c.createRadialGradient(x, gy, 4, x, gy, w); g.addColorStop(0, 'rgba(30,40,10,0.42)'); g.addColorStop(1, 'rgba(30,40,10,0)'); c.fillStyle = g; c.save(); c.translate(x, gy); c.scale(1, 0.16); c.translate(-x, -gy); c.beginPath(); c.arc(x, gy, w, 0, 7); c.fill(); c.restore(); };
     const dh = 280, ih = 262, kh = 262;
-    const dX = G.W * 0.115, iX = G.W * 0.285, bX = G.W * 0.9;
+    const dX = G.W * 0.46, iX = G.W * 0.32, bX = G.W * 0.78;
     shadow(dX, 120); shadow(iX, 80); shadow(bX, 105);
     drawSprite(c, IMG.arch_point, dX, gy, dh + Math.sin(this.t * 2) * 3);
-    for (let k = 0; k < 5; k++) drawBalloon(c, G.W * (0.64 + k * 0.035), G.H * (0.5 - (k % 2) * 0.06) + Math.sin(this.t * 2 + k) * 10, TOYC[k], 0.9);
+    for (let k = 0; k < 5; k++) drawBalloon(c, G.W * (0.53 + k * 0.035), G.H * (0.47 - (k % 2) * 0.06) + Math.sin(this.t * 2 + k) * 10, TOYC[k], 0.9);
     const hop = Math.abs(Math.sin(this.t * 2.6)) * 6;
     drawSprite(c, IMG.iskra_hero, iX, gy - hop, ih);
     drawSprite(c, IMG.bublik, bX, gy, kh, true, 1, 1 + Math.sin(this.t * 2.4) * 0.012);
     // Щёлк кружит в правом верхнем углу, справа от логотипа
-    const sx = (lx + lw + G.W) / 2 + Math.sin(this.t * 0.9) * Math.max(10, (G.W - lx - lw) / 2 - 130), sy = 200 + Math.sin(this.t * 1.8) * 26;
+    const sx = G.W * 0.74 + Math.sin(this.t * 0.9) * 30, sy = G.H * 0.36 + Math.sin(this.t * 1.8) * 20;
     c.save(); c.translate(sx, sy); c.rotate(Math.sin(this.t * 0.9 + 1.5) * 0.08); const fw = 230; c.drawImage(IMG.shchelk_front, -fw / 2, -fw * IMG.shchelk_front.height / IMG.shchelk_front.width / 2, fw, fw * IMG.shchelk_front.height / IMG.shchelk_front.width); c.restore();
     if (IMG.logo) {
       glow(c, G.W / 2, ly + lh * 0.55, lw * 0.5, 'rgba(255,230,150,0.45)', 0.6);
@@ -85,7 +85,7 @@ class TitleScene {
       glow(c, G.W / 2, 150, 520, 'rgba(255,220,120,0.45)', 0.6 + Math.sin(this.t * 2) * 0.1);
       drawLogo(c, 'Игрушки на полках', G.W / 2, 150, Math.min(92, G.W / 15), this.t, 0.5);
     }
-    const bw = 330, bh = 104, bx = G.W * 0.575 - bw / 2, by = G.H - 150;
+    const bw = 330, bh = 104, bx = G.W * 0.595 - bw / 2, by = G.H - 150;
     if (!/cover/.test(location.search)) goldButton(c, bx, by, bw, bh, 'Играть', 60, Math.sin(this.t * 4) * 0.035);
     addButton(bx, by, bw, bh, () => this.onEnter(), 'play');
     drawParticles(c, 'world');
@@ -566,8 +566,8 @@ function titleFX(c, t) {
   }
   for (const m of _MOTES) {
     const y = ((m.y - t * m.v) % 1 + 1) % 1, x = m.x + Math.sin(t * 0.6 + m.ph) * 0.015, tw = 0.5 + 0.5 * Math.sin(t * 2.3 + m.ph);
-    const px = x * W, py = y * H, r = m.s * (1.6 + tw);
-    const g = c.createRadialGradient(px, py, 0, px, py, r * 4); g.addColorStop(0, `rgba(255,245,200,${0.55 * tw + 0.2})`); g.addColorStop(1, 'rgba(255,220,140,0)');
+    const px = x * W, py = y * H, r = m.s * (0.8 + 0.6 * tw);
+    const g = c.createRadialGradient(px, py, 0, px, py, r * 4); g.addColorStop(0, `rgba(255,245,200,${0.25 * tw + 0.08})`); g.addColorStop(1, 'rgba(255,220,140,0)');
     c.fillStyle = g; c.beginPath(); c.arc(px, py, r * 4, 0, 7); c.fill();
   }
   c.restore();
