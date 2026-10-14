@@ -4,7 +4,7 @@
 // дальше кадр только ставит готовые буквы (иначе ~150 strokeText за кадр — тормозит на телефоне)
 const LOGO_CACHE = new Map();
 const LOGO_COLS = [['#ffe3e3', '#ff6b6b', '#c92a2a'], ['#fff3bf', '#ffd43b', '#f08c00'], ['#d3f9d8', '#51cf66', '#2b8a3e'], ['#d0ebff', '#4dabf7', '#1864ab'], ['#f3d9fa', '#cc5de8', '#862e9c'], ['#ffe8cc', '#ff922b', '#d9480f']];
-const LFONT = size => `900 ${size}px "NunitoLogo", ${FONT}`;
+const LFONT = size => `400 ${size}px "FairyLogo", ${FONT}`;
 function logoGlyph(ch, size, k, idx = 0) {
   // праздничная буква: своя «игрушечная» краска (радужный набор), белая и тёмная обводки, тень, блик
   const ok = !document.fonts || document.fonts.check(LFONT(size));
@@ -33,7 +33,7 @@ function drawLogo(c, text, cx, cy, size, t = 0, arc = 0.0, toys = true) {
   size = Math.round(size);
   const k = Math.min(4, Math.max(1, Math.round((c.getTransform ? Math.abs(c.getTransform().a) : 1) * 4) / 4));
   c.save(); c.font = LFONT(size);
-  const chars = [...text], widths = chars.map(ch => c.measureText(ch).width);
+  const chars = [...text], widths = chars.map(ch => ch === ' ' ? size * 0.42 : c.measureText(ch).width * 1.06);
   const total = widths.reduce((a, b) => a + b, 0) * 1.04;
   // мягкое сияние за надписью
   glow(c, cx, cy, total * 0.55, 'rgba(255,236,160,0.35)', 0.6 + Math.sin(t * 2) * 0.1);
@@ -69,7 +69,7 @@ class TitleScene {
     const dX = G.W * 0.46, iX = G.W * 0.32, bX = G.W * 0.78;
     shadow(dX, 120); shadow(iX, 80); shadow(bX, 105);
     drawSprite(c, IMG.arch_point, dX, gy, dh + Math.sin(this.t * 2) * 3);
-    for (let k = 0; k < 5; k++) drawBalloon(c, G.W * (0.53 + k * 0.035), G.H * (0.47 - (k % 2) * 0.06) + Math.sin(this.t * 2 + k) * 10, TOYC[k], 0.9);
+    drawBalloonBunch(c, G.W * 0.60, G.H * 0.30, 5, this.t, 0.85);
     const hop = Math.abs(Math.sin(this.t * 2.6)) * 6;
     drawSprite(c, IMG.iskra_hero, iX, gy - hop, ih);
     drawSprite(c, IMG.bublik, bX, gy, kh, true, 1, 1 + Math.sin(this.t * 2.4) * 0.012);
@@ -290,7 +290,7 @@ class FinaleScene {
     for (const [x, w] of [[G.W * 0.17, 110], [G.W * 0.43, 90], [G.W * 0.66, 100]]) { c.beginPath(); c.ellipse(x, gy, w, 14, 0, 0, 7); c.fill(); }
     // Архимед радуется: два прыжка «ура» (руки вверх) → приземлился и стоит со свитком → снова прыжки
     drawSprite(c, IMG.arch_cheer, G.W * 0.17, gy - hop(0), 300);
-    { const bx = G.W * 0.08 + Math.sin(this.t * 1.3) * 10, by = G.H * 0.44 + Math.sin(this.t * 3) * 10; for (let k = 0; k < 3; k++) drawBalloon(c, bx + k * 50, by + (k % 2) * 30, TOYC[k + 2], 0.9); }
+    { const bx = G.W * 0.08 + Math.sin(this.t * 1.3) * 10, by = G.H * 0.44 + Math.sin(this.t * 3) * 10; drawBalloonBunch(c, bx + 50, by - 40, 3, this.t, 0.8, TOYC.slice(2)); }
     glow(c, G.W * 0.43, gy - 150, 220, 'rgba(255,220,120,0.35)', 0.8);
     drawSprite(c, IMG.iskra_hero, G.W * 0.43, gy - hop(1), 330);
     drawSprite(c, IMG.bublik, G.W * 0.66, gy - hop(2), 290, true);
@@ -546,7 +546,7 @@ function loadOptionalLogo() {
 }
 (async function boot() {
   try {
-    await Promise.all([loadImages(), loadOptionalLogo(), document.fonts ? Promise.all([document.fonts.load(font(40, 400)), document.fonts.load(font(40, 900)), document.fonts.load('400 40px "Pangolin"', 'Десять 0123456789'), document.fonts.load('900 40px "NunitoLogo"', 'Игрушки на полках!')]).then(() => document.fonts.ready) : Promise.resolve()]);
+    await Promise.all([loadImages(), loadOptionalLogo(), document.fonts ? Promise.all([document.fonts.load(font(40, 400)), document.fonts.load(font(40, 900)), document.fonts.load('400 40px "Pangolin"', 'Десять 0123456789'), document.fonts.load('400 40px "FairyLogo"', 'Игрушки на полках!')]).then(() => document.fonts.ready) : Promise.resolve()]);
     if (document.fonts && !document.fonts.check('40px "Pangolin"')) console.error('шрифт Pangolin не загрузился');
   } catch (e) { console.error(e); }
   G.scene = URLP.get('level') === 'p' ? new PlayScene(PROLOGUE) : URLP.has('level') ? new PlayScene(clamp(+URLP.get('level') - 1, 0, LEVELS.length - 1)) : new TitleScene();
@@ -574,4 +574,15 @@ function titleFX(c, t) {
   c.fillStyle = 'rgba(255,225,170,0.08)'; c.fillRect(0, 0, W, H);
   const v = c.createRadialGradient(W / 2, H * 0.45, Math.min(W, H) * 0.45, W / 2, H * 0.5, Math.max(W, H) * 0.8);
   v.addColorStop(0, 'rgba(40,20,10,0)'); v.addColorStop(1, 'rgba(40,20,10,0.38)'); c.fillStyle = v; c.fillRect(0, 0, W, H);
+}
+// ===== Связка воздушных шариков на ниточках с бантиком (чтобы не путались с яйцами) =====
+function drawBalloonBunch(c, x, y, n, t, s = 1, cols = TOYC) {
+  const kx = x, ky = y + 150 * s, pts = [];
+  for (let k = 0; k < n; k++) { const a = (k - (n - 1) / 2) * 0.42, r = (k % 2 ? 105 : 125) * s; pts.push([kx + Math.sin(a) * r + Math.sin(t * 1.7 + k) * 5 * s, ky - Math.cos(a) * r - 10 * s + Math.cos(t * 2 + k) * 4 * s]); }
+  c.save(); c.strokeStyle = 'rgba(90,60,40,0.85)'; c.lineWidth = 1.6 * s;
+  for (const [px, py] of pts) { c.beginPath(); c.moveTo(px, py + 40 * s); c.quadraticCurveTo((px + kx) / 2 + 8 * s, (py + ky) / 2 + 20 * s, kx, ky); c.stroke(); }
+  c.beginPath(); c.moveTo(kx, ky); c.quadraticCurveTo(kx - 10 * s, ky + 40 * s, kx + 6 * s + Math.sin(t * 2) * 4 * s, ky + 80 * s); c.stroke();
+  c.fillStyle = '#e8590c'; c.beginPath(); c.ellipse(kx - 9 * s, ky, 9 * s, 5 * s, 0.4, 0, 7); c.ellipse(kx + 9 * s, ky, 9 * s, 5 * s, -0.4, 0, 7); c.fill(); c.beginPath(); c.arc(kx, ky, 4 * s, 0, 7); c.fill();
+  c.restore();
+  pts.forEach(([px, py], k) => drawBalloon(c, px, py, cols[k % cols.length], s));
 }
